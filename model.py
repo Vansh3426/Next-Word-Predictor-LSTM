@@ -2,13 +2,16 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader,Dataset
 import spacy
+import json
 
+device = 'cuda'  if torch.cuda.is_available else 'cpu'
 
+torch.cuda.manual_seed(42)
 torch.manual_seed(42)
 
 nlp = spacy.load("en_core_web_md")
 
-with open("LSTM/LSTM-word-prediction/1661-0-copy.txt", "r", encoding="utf-8") as f:
+with open("LSTM/LSTM-word-prediction/1661-0.txt", "r", encoding="utf-8") as f:
     text = f.read()
     
 
@@ -44,6 +47,12 @@ def dictionary(list):
 vocab =dictionary(tokens)
 vocab_size =len(vocab)
 print(vocab_size)
+
+
+
+with open("vocab.json", "w") as f:
+    json.dump(vocab, f)
+
 
 
 def build_sentences(text):
@@ -125,7 +134,7 @@ def size(text):
 
 max_size_of_input_sequence =size(training_sequences)
 
-
+max_length = 65
 
 def padding(max_length,train_sequences):
     
@@ -133,11 +142,12 @@ def padding(max_length,train_sequences):
     max_size = max_length
     
     for sequence in train_sequences:
+        sequence = sequence[-max_size:]
         padded_sequences.append([0]*((max_size)-len(sequence)) + sequence)
     
     return padded_sequences
 
-padded_training_sequences = padding(max_size_of_input_sequence,training_sequences) ## this goes in the embedding layer 
+padded_training_sequences = padding(max_length,training_sequences) ## this goes in the embedding layer 
 
 
 
@@ -178,20 +188,20 @@ class Next_word_predictor(nn.Module):
     def __init__(self ,vocab_size):
         super().__init__()
         
-        self.embedding =nn.Embedding(num_embeddings=vocab_size,embedding_dim=100)
-        self.lstm =nn.LSTM(input_size=100 ,hidden_size=150 , batch_first=True)
-        self.linear =nn.Linear(150 , vocab_size)
+        self.embedding =nn.Embedding(num_embeddings=vocab_size,embedding_dim=200)
+        self.lstm =nn.LSTM(input_size=200 ,hidden_size=250 ,num_layers=3, batch_first=True)
+        self.linear =nn.Linear(250 , vocab_size)
     
     def forward(self,x):
         embeddings =self.embedding(x)
         each_timestamp_hidden_state_output ,(final_hidden_state , final_cell_state) = self.lstm(embeddings)
-        final_output =self.linear(final_hidden_state.squeeze(0))
+        final_output =self.linear(final_hidden_state[-1])
         return final_output
         
-model = Next_word_predictor(vocab_size)
+model = Next_word_predictor(vocab_size).to(device)
 
 loss_fn =nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(params=model.parameters(),lr =0.01)
+optimizer = torch.optim.Adam(params=model.parameters(),lr =0.001)
 
 
 # x,y =next(iter(dataloader))
@@ -210,14 +220,14 @@ optimizer = torch.optim.Adam(params=model.parameters(),lr =0.01)
 
 ## training
 if __name__ == "__main__":
-    epochs = 20
+    epochs = 75
 
     for epoch in range(epochs):
     
         total_loss = 0
         for X,y in dataloader:
         
-
+            X ,y =X.to(device) , y.to(device)
             # print(X.shape ,y.shape)
             optimizer.zero_grad()
         
