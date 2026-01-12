@@ -1,5 +1,5 @@
 import torch
-from model import Next_word_predictor,vocab_size ,vocab ,sentece_tokenize,tokenize,max_size_of_input_sequence,padding,loss_fn
+from model import Next_word_predictor,vocab_size ,vocab ,tokenize,max_size_of_input_sequence,padding
 
 
 model = Next_word_predictor(vocab_size)
@@ -51,7 +51,7 @@ def prediction(text ,model):
     
     
     
-text =" i was saying "
+text ="Let me see,” said Holmes,"
 
 for i in range(10):
     output =prediction(text,model)
