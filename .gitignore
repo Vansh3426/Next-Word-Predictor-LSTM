@@ -1,4 +1,4 @@
 LSTM-word-prediction
 __pycache__
-next_word_prediction_model.pth
 vocab.json
+*.pth 
