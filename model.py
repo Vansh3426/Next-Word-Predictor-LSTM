@@ -14,7 +14,21 @@ nlp = spacy.load("en_core_web_md")
 with open("LSTM/LSTM-word-prediction/1661-0.txt", "r", encoding="utf-8") as f:
     text = f.read()
     
+# text='''
+# “My dear doctor, this is a time for observation, not for talk. We are
+# spies in an enemy’s country. We know something of Saxe-Coburg Square.
+# Let us now explore the parts which lie behind it.”
 
+# The road in which we found ourselves as we turned round the corner from
+# the retired Saxe-Coburg Square presented as great a contrast to it as
+# the front of a picture does to the back. It was one of the main
+# arteries which conveyed the traffic of the City to the north and west.
+# The roadway was blocked with the immense stream of commerce flowing in
+# a double tide inward and outward, while the footpaths were black with
+# the hurrying swarm of pedestrians. It was difficult to realise as we
+# looked at the line of fine shops and stately business premises that
+# they really abutted on the other side upon the faded and stagnant
+# square which we had just quitted. '''
 
 def tokenize(text):
     doc =nlp(text)
@@ -35,7 +49,7 @@ tokens =tokenize(text)
 def dictionary(list):
     
     token_list =list
-    vocab ={"<unk>":0}
+    vocab ={"<pad>":0,"<unk>":1}
     
     for word in token_list:
         if word not in vocab:
@@ -148,6 +162,7 @@ def padding(max_length,train_sequences):
     return padded_sequences
 
 padded_training_sequences = padding(max_length,training_sequences) ## this goes in the embedding layer 
+PAD_IDX = 0
 
 
 
@@ -188,9 +203,9 @@ class Next_word_predictor(nn.Module):
     def __init__(self ,vocab_size):
         super().__init__()
         
-        self.embedding =nn.Embedding(num_embeddings=vocab_size,embedding_dim=200)
-        self.lstm =nn.LSTM(input_size=200 ,hidden_size=250 ,num_layers=3, batch_first=True)
-        self.linear =nn.Linear(250 , vocab_size)
+        self.embedding =nn.Embedding(num_embeddings=vocab_size,embedding_dim=100 , padding_idx=PAD_IDX)
+        self.lstm =nn.LSTM(input_size=100 ,hidden_size=128 ,num_layers=2, batch_first=True)
+        self.linear =nn.Linear(128 , vocab_size)
     
     def forward(self,x):
         embeddings =self.embedding(x)
@@ -200,8 +215,10 @@ class Next_word_predictor(nn.Module):
         
 model = Next_word_predictor(vocab_size).to(device)
 
-loss_fn =nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(params=model.parameters(),lr =0.001)
+
+
+loss_fn =nn.CrossEntropyLoss(ignore_index=PAD_IDX)
+optimizer = torch.optim.Adam(params=model.parameters(),lr =0.0005)
 
 
 # x,y =next(iter(dataloader))
@@ -220,11 +237,12 @@ optimizer = torch.optim.Adam(params=model.parameters(),lr =0.001)
 
 ## training
 if __name__ == "__main__":
-    epochs = 75
+    epochs = 45
 
     for epoch in range(epochs):
     
         total_loss = 0
+        num_batch =0
         for X,y in dataloader:
         
             X ,y =X.to(device) , y.to(device)
@@ -232,6 +250,7 @@ if __name__ == "__main__":
             optimizer.zero_grad()
         
             pred =model(X)
+            num_batch += 1
         
             # print(pred.shape)
             loss =loss_fn(pred ,y)
@@ -241,7 +260,7 @@ if __name__ == "__main__":
         
             optimizer.step()        
         
-        print(f"Epoch no : {epoch}  | total loss per epoch : {total_loss} ")
+        print(f"Epoch no : {epoch}  | total loss per epoch : {(total_loss)/(num_batch)} ")
         
         torch.save(model.state_dict() ,'LSTM/next_word_prediction_model.pth')
         
