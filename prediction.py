@@ -1,5 +1,21 @@
 import torch
-from model import Next_word_predictor,vocab_size ,vocab ,tokenize,max_size_of_input_sequence,padding
+from model import Next_word_predictor
+import spacy
+import json
+import os
+
+# Get the directory of the current file (run_prediction.py)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Build the path to vocab.json in the same folder
+VOCAB_PATH = os.path.join(BASE_DIR, "vocab.json")
+
+# Load the vocab
+with open(VOCAB_PATH, "r", encoding="utf-8") as f:
+    vocab = json.load(f)
+vocab_size =len(vocab)
+
+text ="Let me see,” said Holmes,"
 
 
 model = Next_word_predictor(vocab_size)
@@ -7,6 +23,22 @@ model.load_state_dict(torch.load('LSTM/next_word_prediction_model.pth'))
 model.eval()
 
 
+
+nlp = spacy.load("en_core_web_md")
+
+def tokenize(text):
+    doc =nlp(text)
+    
+    tokenized_text =[]
+    for token in doc:
+        
+        
+        # token = token.split(" ")
+        if not token.is_punct and not token.is_quote and not token.is_space:
+            tokenized_text.append(token.lower_)
+    return tokenized_text
+
+tokens =tokenize(text)
 
 def text_to_index_new(sentence):
     
@@ -25,6 +57,8 @@ def padding(max_length,sequence):
     padded_sequences.append([0]*((max_size)-len(sequence)) + sequence)
     
     return padded_sequences
+
+max_size_of_input_sequence = 65
 
 def prediction(text ,model):
     
@@ -51,7 +85,7 @@ def prediction(text ,model):
     
     
     
-text ="Let me see,” said Holmes,"
+
 
 for i in range(10):
     output =prediction(text,model)
