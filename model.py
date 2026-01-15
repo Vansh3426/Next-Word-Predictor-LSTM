@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader,Dataset
 import spacy
 import json
 
+
 device = 'cuda'  if torch.cuda.is_available else 'cpu'
 
 torch.cuda.manual_seed(42)
@@ -14,21 +15,6 @@ nlp = spacy.load("en_core_web_md")
 with open("LSTM/LSTM-word-prediction/1661-0.txt", "r", encoding="utf-8") as f:
     text = f.read()
     
-# text='''
-# “My dear doctor, this is a time for observation, not for talk. We are
-# spies in an enemy’s country. We know something of Saxe-Coburg Square.
-# Let us now explore the parts which lie behind it.”
-
-# The road in which we found ourselves as we turned round the corner from
-# the retired Saxe-Coburg Square presented as great a contrast to it as
-# the front of a picture does to the back. It was one of the main
-# arteries which conveyed the traffic of the City to the north and west.
-# The roadway was blocked with the immense stream of commerce flowing in
-# a double tide inward and outward, while the footpaths were black with
-# the hurrying swarm of pedestrians. It was difficult to realise as we
-# looked at the line of fine shops and stately business premises that
-# they really abutted on the other side upon the faded and stagnant
-# square which we had just quitted. '''
 
 def tokenize(text):
     doc =nlp(text)
