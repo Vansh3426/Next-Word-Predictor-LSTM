@@ -2,3 +2,4 @@ LSTM-word-prediction
 __pycache__
 vocab.json
 *.pth 
+data 
